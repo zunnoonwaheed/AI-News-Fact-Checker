@@ -1,21 +1,66 @@
-import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, XCircle, AlertTriangle, AlertCircle, HelpCircle } from "lucide-react";
 
-export function VerdictBadge({ verdict, className = "" }: { verdict: string, className?: string }) {
-  const config = {
-    verified: { color: "bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/20", icon: CheckCircle2, label: "Verified" },
-    false: { color: "bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/20", icon: XCircle, label: "False" },
-    misleading: { color: "bg-orange-500/10 text-orange-700 dark:text-orange-400 border-orange-500/20", icon: AlertTriangle, label: "Misleading" },
-    partially_true: { color: "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-500/20", icon: AlertCircle, label: "Partially True" },
-    unverified: { color: "bg-slate-500/10 text-slate-700 dark:text-slate-400 border-slate-500/20", icon: HelpCircle, label: "Unverified" },
-  }[verdict] || { color: "bg-slate-500/10 text-slate-700 dark:text-slate-400 border-slate-500/20", icon: HelpCircle, label: verdict };
+type Verdict = "verified" | "false" | "misleading" | "partially_true" | "unverified";
 
+const VERDICT_CONFIG: Record<string, {
+  bg: string; text: string; border: string; icon: React.ElementType; label: string; dot: string;
+}> = {
+  verified: {
+    bg: "bg-emerald-50", text: "text-emerald-800", border: "border-emerald-200",
+    icon: CheckCircle2, label: "Verified", dot: "bg-emerald-500",
+  },
+  false: {
+    bg: "bg-red-50", text: "text-red-800", border: "border-red-200",
+    icon: XCircle, label: "False", dot: "bg-red-500",
+  },
+  misleading: {
+    bg: "bg-orange-50", text: "text-orange-800", border: "border-orange-200",
+    icon: AlertTriangle, label: "Misleading", dot: "bg-orange-500",
+  },
+  partially_true: {
+    bg: "bg-amber-50", text: "text-amber-800", border: "border-amber-200",
+    icon: AlertCircle, label: "Partially True", dot: "bg-amber-500",
+  },
+  unverified: {
+    bg: "bg-slate-50", text: "text-slate-700", border: "border-slate-200",
+    icon: HelpCircle, label: "Unverified", dot: "bg-slate-400",
+  },
+};
+
+export function VerdictBadge({
+  verdict,
+  className = "",
+  size = "sm",
+}: {
+  verdict: string;
+  className?: string;
+  size?: "sm" | "md" | "lg";
+}) {
+  const config = VERDICT_CONFIG[verdict] ?? VERDICT_CONFIG.unverified;
   const Icon = config.icon;
 
+  const sizeClasses = {
+    sm: "text-xs px-2.5 py-1 gap-1.5",
+    md: "text-sm px-3 py-1.5 gap-2",
+    lg: "text-sm px-4 py-2 gap-2 font-semibold",
+  }[size];
+
   return (
-    <Badge variant="outline" className={`flex items-center gap-1.5 px-2.5 py-1 border font-medium whitespace-nowrap ${config.color} ${className}`}>
-      <Icon size={14} />
+    <span
+      className={`inline-flex items-center rounded-full border font-medium tracking-wide ${config.bg} ${config.text} ${config.border} ${sizeClasses} ${className}`}
+    >
+      <Icon size={size === "sm" ? 12 : 14} strokeWidth={2.5} />
       {config.label}
-    </Badge>
+    </span>
+  );
+}
+
+export function VerdictPill({ verdict }: { verdict: string }) {
+  const config = VERDICT_CONFIG[verdict] ?? VERDICT_CONFIG.unverified;
+  return (
+    <span className={`inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest ${config.text}`}>
+      <span className={`w-2 h-2 rounded-full ${config.dot}`} />
+      {config.label}
+    </span>
   );
 }

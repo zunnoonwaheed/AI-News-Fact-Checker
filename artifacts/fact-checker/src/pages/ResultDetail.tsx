@@ -1,14 +1,22 @@
 import { useParams, useLocation } from "wouter";
 import { useGetFactCheckById, getGetFactCheckByIdQueryKey } from "@workspace/api-client-react";
-import { VerdictBadge } from "@/components/VerdictBadge";
+import { VerdictBadge, VerdictPill } from "@/components/VerdictBadge";
 import { CredibilityScore } from "@/components/CredibilityScore";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ExternalLink, Calendar, Info, FileText, Link as LinkIcon, ShieldCheck } from "lucide-react";
-import { Progress } from "@/components/ui/progress";
-import { Separator } from "@/components/ui/separator";
+import {
+  ArrowLeft, ExternalLink, Calendar, Info, FileText,
+  Link as LinkIcon, ShieldCheck, AlertCircle, Newspaper
+} from "lucide-react";
+
+const VERDICT_LEFT_COLORS: Record<string, string> = {
+  verified: "#10b981",
+  false: "#ef4444",
+  misleading: "#f97316",
+  partially_true: "#f59e0b",
+  unverified: "#94a3b8",
+};
 
 export function ResultDetail() {
   const params = useParams();
@@ -16,27 +24,25 @@ export function ResultDetail() {
   const id = parseInt(params.id || "0");
 
   const { data, isLoading, error } = useGetFactCheckById(id, {
-    query: { 
-      queryKey: getGetFactCheckByIdQueryKey(id),
-      enabled: !!id 
-    }
+    query: { queryKey: getGetFactCheckByIdQueryKey(id), enabled: !!id },
   });
 
   if (isLoading) {
     return (
-      <div className="space-y-8 animate-pulse">
-        <div className="flex items-center gap-4">
-          <Skeleton className="h-10 w-10 rounded-full" />
-          <Skeleton className="h-8 w-1/4" />
+      <div className="space-y-6 animate-pulse">
+        <div className="flex items-center gap-3">
+          <Skeleton className="h-9 w-20" />
+          <Skeleton className="h-7 w-64" />
         </div>
-        <Skeleton className="h-32 w-full" />
-        <div className="grid md:grid-cols-3 gap-6">
-          <div className="md:col-span-2 space-y-6">
-            <Skeleton className="h-48 w-full" />
-            <Skeleton className="h-48 w-full" />
+        <Skeleton className="h-48 w-full rounded-xl" />
+        <div className="grid lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-5">
+            <Skeleton className="h-56 w-full" />
+            <Skeleton className="h-40 w-full" />
           </div>
-          <div className="space-y-6">
+          <div className="space-y-5">
             <Skeleton className="h-64 w-full" />
+            <Skeleton className="h-40 w-full" />
           </div>
         </div>
       </div>
@@ -46,90 +52,124 @@ export function ResultDetail() {
   if (error || !data) {
     return (
       <div className="text-center py-20 space-y-4">
-        <ShieldCheck className="w-16 h-16 text-muted-foreground mx-auto opacity-50" />
+        <ShieldCheck className="w-16 h-16 text-muted-foreground/30 mx-auto" />
         <h2 className="text-2xl font-serif font-bold">Result Not Found</h2>
-        <p className="text-muted-foreground">The fact check you're looking for doesn't exist or an error occurred.</p>
-        <Button onClick={() => setLocation('/')}>Back to Home</Button>
+        <p className="text-muted-foreground">This fact check doesn't exist or an error occurred.</p>
+        <Button onClick={() => setLocation("/")} className="mt-2">Return to Home</Button>
       </div>
     );
   }
 
+  const claimTyped = data.claims as Array<{
+    text: string; verdict: string; explanation: string; confidence: number;
+  }>;
+  const sourcesTyped = data.sources as Array<{
+    name: string; url: string; publishedAt?: string; description?: string; credibilityScore?: number;
+  }>;
+  const relatedTyped = (data.relatedArticles ?? []) as Array<{
+    name: string; url: string; publishedAt?: string;
+  }>;
+
   return (
-    <div className="space-y-8 pb-12">
-      <div className="flex items-center gap-2">
-        <Button variant="ghost" size="sm" onClick={() => setLocation('/')} className="-ml-3 text-muted-foreground">
-          <ArrowLeft className="w-4 h-4 mr-2" /> Back
+    <div className="space-y-7 pb-12">
+
+      {/* Breadcrumb */}
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setLocation("/")}
+          className="-ml-3 gap-1.5 text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="w-3.5 h-3.5" />
+          Back
         </Button>
+        <span>/</span>
+        <span className="text-foreground font-medium truncate max-w-[300px]">
+          Verification #{data.id}
+        </span>
       </div>
 
-      {/* Header Section */}
-      <div className="bg-card border rounded-xl overflow-hidden shadow-sm">
-        <div className="p-6 md:p-8 border-b bg-muted/20">
-          <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 mb-6">
-            <div className="space-y-4 flex-1">
-              <div className="flex items-center gap-3">
-                <VerdictBadge verdict={data.overallVerdict} className="text-base px-3 py-1.5" />
-                <span className="text-sm text-muted-foreground flex items-center">
-                  <Calendar className="w-4 h-4 mr-1.5" />
-                  {new Date(data.checkedAt).toLocaleString(undefined, { 
-                    dateStyle: 'medium', timeStyle: 'short' 
+      {/* Hero header card */}
+      <div className="hero-gradient rounded-xl overflow-hidden shadow-xl">
+        <div className="px-6 md:px-10 py-8">
+          <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
+            <div className="flex-1 space-y-4">
+              <div className="flex flex-wrap items-center gap-3">
+                <VerdictBadge verdict={data.overallVerdict} size="lg" />
+                <span className="text-blue-200/70 text-sm flex items-center gap-1.5">
+                  <Calendar className="w-3.5 h-3.5" />
+                  {new Date(data.checkedAt).toLocaleString(undefined, {
+                    dateStyle: "long", timeStyle: "short",
                   })}
                 </span>
               </div>
-              <h1 className="text-2xl md:text-3xl font-serif font-bold leading-tight">
+
+              <h1 className="text-xl md:text-2xl font-serif font-bold text-white leading-tight">
                 "{data.query}"
               </h1>
             </div>
-            <div className="shrink-0 p-4 bg-background border rounded-lg shadow-sm">
+
+            <div className="shrink-0 bg-white/10 backdrop-blur border border-white/20 rounded-xl p-5 flex items-center justify-center">
               <CredibilityScore score={data.credibilityScore} size="lg" />
             </div>
           </div>
-          
-          <div className="bg-background/80 p-5 rounded-lg border">
-            <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center">
-              <FileText className="w-4 h-4 mr-2" /> Summary
-            </h3>
-            <p className="text-lg leading-relaxed">{data.summary}</p>
+        </div>
+
+        {/* Summary bar */}
+        <div className="border-t border-white/10 bg-black/20 px-6 md:px-10 py-4">
+          <div className="flex items-start gap-3">
+            <FileText className="w-4 h-4 text-blue-300 shrink-0 mt-0.5" />
+            <p className="text-blue-100/90 text-sm leading-relaxed">{data.summary}</p>
           </div>
         </div>
       </div>
 
-      <div className="grid md:grid-cols-3 gap-8">
-        {/* Main Content: Claims & Analysis */}
-        <div className="md:col-span-2 space-y-8">
-          
-          {/* Claims Breakdown */}
-          <section className="space-y-4">
-            <h2 className="text-xl font-serif font-bold flex items-center border-b pb-2">
-              <Info className="w-5 h-5 mr-2 text-primary" /> 
-              Claims Analysis
-            </h2>
-            
+      {/* Main content */}
+      <div className="grid lg:grid-cols-3 gap-8">
+
+        {/* Left — Claims + Analysis */}
+        <div className="lg:col-span-2 space-y-8">
+
+          {/* Claims section */}
+          <section>
+            <div className="flex items-center gap-2 border-b-2 border-border pb-3 mb-5">
+              <Info className="w-4.5 h-4.5 text-primary" size={18} />
+              <h2 className="text-lg font-serif font-bold">Claims Analysis</h2>
+              <span className="ml-auto text-xs bg-primary/10 text-primary font-bold px-2 py-0.5 rounded-full">
+                {claimTyped.length} claim{claimTyped.length !== 1 ? "s" : ""}
+              </span>
+            </div>
+
             <div className="space-y-4">
-              {data.claims.map((claim, index) => (
-                <Card key={index} className="overflow-hidden border-l-4 shadow-sm" style={{ 
-                  borderLeftColor: claim.verdict === 'verified' ? 'var(--color-chart-3)' : 
-                                   claim.verdict === 'false' ? 'var(--color-destructive)' : 
-                                   claim.verdict === 'misleading' ? 'var(--color-chart-1)' : 
-                                   claim.verdict === 'partially_true' ? 'var(--color-chart-4)' : 'var(--color-border)'
-                }}>
-                  <CardHeader className="p-5 pb-3 bg-muted/10">
-                    <div className="flex justify-between items-start gap-4 mb-2">
+              {claimTyped.map((claim, i) => (
+                <Card
+                  key={i}
+                  className="bg-white border overflow-hidden shadow-sm"
+                  style={{ borderLeftWidth: 4, borderLeftColor: VERDICT_LEFT_COLORS[claim.verdict] ?? "#94a3b8" }}
+                >
+                  <CardHeader className="px-5 pt-4 pb-3 bg-muted/20">
+                    <div className="flex items-start justify-between gap-3 mb-2">
                       <VerdictBadge verdict={claim.verdict} />
-                      <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground bg-background px-2 py-1 rounded-md border">
-                        Confidence
-                        <div className="w-16 h-1.5 bg-muted rounded-full overflow-hidden">
-                          <div 
-                            className="h-full bg-primary rounded-full" 
-                            style={{ width: `${claim.confidence}%` }} 
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wide">Confidence</span>
+                        <div className="w-20 h-1.5 bg-muted rounded-full overflow-hidden">
+                          <div
+                            className="h-full rounded-full"
+                            style={{
+                              width: `${claim.confidence}%`,
+                              backgroundColor: VERDICT_LEFT_COLORS[claim.verdict] ?? "#94a3b8",
+                            }}
                           />
                         </div>
-                        <span>{claim.confidence}%</span>
+                        <span className="text-[11px] font-mono font-bold text-foreground">{claim.confidence}%</span>
                       </div>
                     </div>
-                    <CardTitle className="text-lg leading-snug">"{claim.text}"</CardTitle>
+                    <CardTitle className="text-base font-semibold leading-snug text-foreground">
+                      "{claim.text}"
+                    </CardTitle>
                   </CardHeader>
-                  <CardContent className="p-5 pt-3 text-muted-foreground">
+                  <CardContent className="px-5 py-4 text-sm text-muted-foreground leading-relaxed">
                     {claim.explanation}
                   </CardContent>
                 </Card>
@@ -137,87 +177,104 @@ export function ResultDetail() {
             </div>
           </section>
 
-          {/* AI Analysis Details */}
+          {/* Methodology */}
           {data.analysisDetails && (
-            <section className="space-y-4">
-              <h2 className="text-xl font-serif font-bold border-b pb-2">Detailed Methodology</h2>
-              <div className="prose prose-sm md:prose-base dark:prose-invert max-w-none text-muted-foreground bg-muted/20 p-6 rounded-lg border">
-                {data.analysisDetails.split('\n').map((paragraph, i) => (
-                  <p key={i}>{paragraph}</p>
-                ))}
+            <section>
+              <div className="flex items-center gap-2 border-b-2 border-border pb-3 mb-5">
+                <AlertCircle size={18} className="text-primary" />
+                <h2 className="text-lg font-serif font-bold">AI Analysis Methodology</h2>
+              </div>
+              <div className="bg-white border rounded-xl p-6 shadow-sm">
+                <div className="prose prose-sm prose-slate max-w-none text-muted-foreground">
+                  {data.analysisDetails.split("\n").filter(Boolean).map((p, i) => (
+                    <p key={i} className="mb-3 last:mb-0 leading-relaxed text-sm">{p}</p>
+                  ))}
+                </div>
               </div>
             </section>
           )}
         </div>
 
-        {/* Sidebar: Sources & Related */}
-        <div className="space-y-8">
-          
-          <section className="space-y-4">
-            <h2 className="text-lg font-serif font-bold flex items-center border-b pb-2">
-              <LinkIcon className="w-5 h-5 mr-2 text-primary" /> 
-              Cited Sources
-            </h2>
-            
+        {/* Right — Sources */}
+        <div className="space-y-7">
+
+          {/* Cited sources */}
+          <section>
+            <div className="flex items-center gap-2 border-b-2 border-border pb-3 mb-4">
+              <LinkIcon size={16} className="text-primary" />
+              <h2 className="text-base font-serif font-bold">Cited Sources</h2>
+            </div>
+
             <div className="space-y-3">
-              {data.sources.map((source, index) => (
-                <Card key={index} className="shadow-sm">
-                  <CardContent className="p-4 space-y-3">
-                    <div className="flex justify-between items-start gap-2">
-                      <h4 className="font-semibold text-sm line-clamp-2">{source.name}</h4>
+              {sourcesTyped.length === 0 ? (
+                <div className="text-sm text-muted-foreground text-center py-6 border-2 border-dashed rounded-lg">
+                  No direct sources found.
+                </div>
+              ) : (
+                sourcesTyped.map((source, i) => (
+                  <div key={i} className="bg-white border rounded-lg p-4 shadow-sm hover:border-primary/40 transition-colors group">
+                    <div className="flex justify-between items-start gap-2 mb-2">
+                      <h4 className="font-bold text-sm leading-snug line-clamp-2 group-hover:text-primary transition-colors">
+                        {source.name}
+                      </h4>
                       {source.credibilityScore && (
-                        <Badge variant="secondary" className="shrink-0 font-mono text-xs">
-                          Score: {source.credibilityScore}
-                        </Badge>
+                        <span className="text-[10px] font-black font-mono shrink-0 text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                          {Math.round(source.credibilityScore)}
+                        </span>
                       )}
                     </div>
                     {source.description && (
-                      <p className="text-xs text-muted-foreground line-clamp-2">{source.description}</p>
+                      <p className="text-xs text-muted-foreground line-clamp-2 mb-2 leading-relaxed">
+                        {source.description}
+                      </p>
                     )}
-                    <div className="flex items-center justify-between pt-2 border-t">
+                    <div className="flex items-center justify-between border-t border-border/50 pt-2 mt-2">
                       {source.publishedAt && (
-                        <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
+                        <span className="text-[10px] font-mono text-muted-foreground/70">
                           {new Date(source.publishedAt).toLocaleDateString()}
                         </span>
                       )}
-                      <a 
-                        href={source.url} 
-                        target="_blank" 
-                        rel="noreferrer" 
-                        className="text-xs text-primary hover:underline flex items-center ml-auto font-medium"
+                      <a
+                        href={source.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-xs text-primary hover:underline flex items-center gap-1 font-bold ml-auto"
                       >
-                        View Source <ExternalLink className="w-3 h-3 ml-1" />
+                        View <ExternalLink className="w-3 h-3" />
                       </a>
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
-              {data.sources.length === 0 && (
-                <div className="text-sm text-muted-foreground text-center p-4 border rounded-md">
-                  No direct sources found.
-                </div>
+                  </div>
+                ))
               )}
             </div>
           </section>
 
-          {data.relatedArticles && data.relatedArticles.length > 0 && (
-            <section className="space-y-4">
-              <h2 className="text-lg font-serif font-bold border-b pb-2">Related Articles</h2>
-              <div className="space-y-3">
-                {data.relatedArticles.map((article, index) => (
-                  <a 
-                    key={index} 
+          {/* Related articles */}
+          {relatedTyped.length > 0 && (
+            <section>
+              <div className="flex items-center gap-2 border-b-2 border-border pb-3 mb-4">
+                <Newspaper size={16} className="text-primary" />
+                <h2 className="text-base font-serif font-bold">Related Coverage</h2>
+              </div>
+              <div className="space-y-2">
+                {relatedTyped.map((article, i) => (
+                  <a
+                    key={i}
                     href={article.url}
                     target="_blank"
                     rel="noreferrer"
-                    className="block p-3 border rounded-md hover:bg-muted/50 transition-colors group"
+                    className="flex items-start gap-3 p-3 border rounded-lg bg-white hover:bg-primary/5 hover:border-primary/30 transition-colors group"
                   >
-                    <h4 className="font-medium text-sm group-hover:text-primary transition-colors line-clamp-2 mb-1">
-                      {article.name}
-                    </h4>
-                    <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
-                      {new URL(article.url).hostname.replace('www.', '')}
-                    </span>
+                    <div className="w-1 h-full min-h-[36px] rounded-full bg-border group-hover:bg-primary shrink-0 transition-colors" />
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold line-clamp-2 group-hover:text-primary transition-colors leading-snug">
+                        {article.name}
+                      </p>
+                      <span className="text-[10px] text-muted-foreground font-mono mt-0.5 block">
+                        {(() => { try { return new URL(article.url).hostname.replace("www.", ""); } catch { return ""; } })()}
+                      </span>
+                    </div>
+                    <ExternalLink className="w-3 h-3 text-muted-foreground/40 shrink-0 mt-0.5 group-hover:text-primary transition-colors" />
                   </a>
                 ))}
               </div>

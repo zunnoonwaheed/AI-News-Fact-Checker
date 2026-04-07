@@ -2,100 +2,127 @@ import { useGetFactCheckStats, getGetFactCheckStatsQueryKey } from "@workspace/a
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { VerdictBadge } from "@/components/VerdictBadge";
-import { FileText, ShieldAlert, Target, Activity } from "lucide-react";
+import { FileText, ShieldAlert, Target, Activity, TrendingUp } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend } from "recharts";
+
+const VERDICT_COLORS: Record<string, string> = {
+  verified: "#10b981",
+  partially_true: "#f59e0b",
+  misleading: "#f97316",
+  false: "#ef4444",
+  unverified: "#94a3b8",
+};
+
+function StatCard({
+  title,
+  value,
+  sub,
+  icon: Icon,
+  accent = false,
+  loading = false,
+}: {
+  title: string;
+  value: React.ReactNode;
+  sub?: string;
+  icon: React.ElementType;
+  accent?: boolean;
+  loading?: boolean;
+}) {
+  return (
+    <Card className="bg-white border shadow-sm overflow-hidden">
+      <CardContent className="p-5">
+        <div className="flex items-start justify-between">
+          <div className="space-y-3 flex-1">
+            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">{title}</p>
+            {loading ? (
+              <Skeleton className="h-9 w-24" />
+            ) : (
+              <div className={`text-4xl font-black font-mono tracking-tighter ${accent ? "text-destructive" : "text-foreground"}`}>
+                {value}
+              </div>
+            )}
+            {sub && !loading && (
+              <p className="text-xs text-muted-foreground">{sub}</p>
+            )}
+          </div>
+          <div className={`p-2.5 rounded-lg shrink-0 ml-4 ${accent ? "bg-red-50" : "bg-primary/8 bg-blue-50"}`}>
+            <Icon size={20} className={accent ? "text-destructive" : "text-primary"} strokeWidth={2} />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
 export function Stats() {
   const { data, isLoading } = useGetFactCheckStats({
-    query: { queryKey: getGetFactCheckStatsQueryKey() }
+    query: { queryKey: getGetFactCheckStatsQueryKey() },
   });
 
-  const COLORS = {
-    verified: "hsl(150, 60%, 45%)",
-    partially_true: "hsl(45, 90%, 50%)",
-    misleading: "hsl(22, 95%, 50%)",
-    false: "hsl(0, 84%, 60%)",
-    unverified: "hsl(220, 10%, 60%)"
-  };
+  const chartData = data
+    ? Object.entries(data.verdictBreakdown).map(([key, value]) => ({
+        name: key.replace("_", " ").replace(/\b\w/g, (l) => l.toUpperCase()),
+        rawKey: key,
+        value: value as number,
+        color: VERDICT_COLORS[key] ?? "#94a3b8",
+      }))
+    : [];
 
-  const chartData = data ? Object.entries(data.verdictBreakdown).map(([key, value]) => ({
-    name: key.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()),
-    value,
-    color: COLORS[key as keyof typeof COLORS] || COLORS.unverified
-  })) : [];
+  const total = data?.totalChecked || 1;
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-serif font-bold tracking-tight">System Statistics</h1>
-        <p className="text-muted-foreground mt-1">Platform overview and fact-checking metrics.</p>
+
+      {/* Header */}
+      <div className="border-b-2 border-border pb-4">
+        <p className="text-primary text-xs font-bold uppercase tracking-widest mb-1">Dashboard</p>
+        <h1 className="text-3xl font-serif font-bold tracking-tight">Analytics Overview</h1>
+        <p className="text-muted-foreground text-sm mt-1">Platform metrics and fact-checking performance statistics.</p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Checks</CardTitle>
-            <FileText className="w-4 h-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            {isLoading ? <Skeleton className="h-8 w-20" /> : (
-              <div className="text-3xl font-bold">{data?.totalChecked.toLocaleString()}</div>
-            )}
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Avg. Credibility</CardTitle>
-            <Target className="w-4 h-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            {isLoading ? <Skeleton className="h-8 w-20" /> : (
-              <div className="text-3xl font-bold flex items-baseline gap-1">
-                {Math.round(data?.averageCredibilityScore || 0)}
-                <span className="text-sm font-normal text-muted-foreground">/100</span>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Recent Activity</CardTitle>
-            <Activity className="w-4 h-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            {isLoading ? <Skeleton className="h-8 w-20" /> : (
-              <div className="text-3xl font-bold flex items-baseline gap-2">
-                {data?.recentChecks}
-                <span className="text-sm font-normal text-muted-foreground">checks in 24h</span>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">False Claims Found</CardTitle>
-            <ShieldAlert className="w-4 h-4 text-destructive" />
-          </CardHeader>
-          <CardContent>
-            {isLoading ? <Skeleton className="h-8 w-20" /> : (
-              <div className="text-3xl font-bold text-destructive">
-                {data?.verdictBreakdown['false'] || 0}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+      {/* KPI row */}
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard
+          title="Total Verifications"
+          value={data?.totalChecked.toLocaleString() ?? "—"}
+          icon={FileText}
+          loading={isLoading}
+        />
+        <StatCard
+          title="Avg Credibility Score"
+          value={<>{Math.round(data?.averageCredibilityScore || 0)}<span className="text-xl text-muted-foreground font-bold">/100</span></>}
+          icon={Target}
+          loading={isLoading}
+        />
+        <StatCard
+          title="Last 24 Hours"
+          value={data?.recentChecks ?? "—"}
+          sub="checks submitted today"
+          icon={Activity}
+          loading={isLoading}
+        />
+        <StatCard
+          title="False Claims Caught"
+          value={data?.verdictBreakdown["false"] ?? 0}
+          icon={ShieldAlert}
+          accent={true}
+          loading={isLoading}
+        />
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card className="col-span-1">
-          <CardHeader>
-            <CardTitle className="font-serif">Verdict Breakdown</CardTitle>
-            <CardDescription>Distribution of all fact-checked claims</CardDescription>
+      {/* Charts row */}
+      <div className="grid gap-6 lg:grid-cols-5">
+
+        {/* Pie chart */}
+        <Card className="lg:col-span-2 bg-white border shadow-sm">
+          <CardHeader className="pb-2 border-b">
+            <CardTitle className="text-base font-bold flex items-center gap-2">
+              <TrendingUp size={16} className="text-primary" />
+              Verdict Distribution
+            </CardTitle>
+            <CardDescription className="text-xs">All checks by outcome</CardDescription>
           </CardHeader>
-          <CardContent className="h-[300px]">
+          <CardContent className="pt-4 h-[280px]">
             {isLoading ? (
               <div className="flex items-center justify-center h-full">
                 <Skeleton className="w-[200px] h-[200px] rounded-full" />
@@ -108,62 +135,78 @@ export function Stats() {
                     cx="50%"
                     cy="50%"
                     innerRadius={60}
-                    outerRadius={80}
-                    paddingAngle={5}
+                    outerRadius={90}
+                    paddingAngle={3}
                     dataKey="value"
                   >
                     {chartData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
+                      <Cell key={`cell-${index}`} fill={entry.color} strokeWidth={2} stroke="#fff" />
                     ))}
                   </Pie>
-                  <RechartsTooltip 
-                    contentStyle={{ borderRadius: '8px', border: '1px solid var(--border)', backgroundColor: 'var(--card)', color: 'var(--card-foreground)' }}
+                  <RechartsTooltip
+                    contentStyle={{
+                      borderRadius: "8px",
+                      border: "1px solid hsl(214 20% 86%)",
+                      backgroundColor: "#fff",
+                      fontSize: "12px",
+                      fontWeight: 600,
+                      boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+                    }}
                   />
-                  <Legend />
+                  <Legend
+                    iconType="circle"
+                    iconSize={8}
+                    formatter={(value) => (
+                      <span style={{ fontSize: 11, fontWeight: 600, color: "#475569" }}>{value}</span>
+                    )}
+                  />
                 </PieChart>
               </ResponsiveContainer>
             )}
           </CardContent>
         </Card>
 
-        <Card className="col-span-1">
-          <CardHeader>
-            <CardTitle className="font-serif">Verdict Summary</CardTitle>
-            <CardDescription>Detailed count by verdict category</CardDescription>
+        {/* Breakdown table */}
+        <Card className="lg:col-span-3 bg-white border shadow-sm">
+          <CardHeader className="pb-2 border-b">
+            <CardTitle className="text-base font-bold">Verdict Breakdown</CardTitle>
+            <CardDescription className="text-xs">Detailed count by outcome category</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pt-4">
             {isLoading ? (
               <div className="space-y-4">
-                {[1,2,3,4,5].map(i => <Skeleton key={i} className="h-12 w-full" />)}
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <Skeleton key={i} className="h-12 w-full" />
+                ))}
+              </div>
+            ) : chartData.length === 0 ? (
+              <div className="text-center py-10 text-muted-foreground text-sm">
+                No data yet — submit a fact check to see stats.
               </div>
             ) : (
-              <div className="space-y-4">
-                {chartData.map((item, i) => {
-                  const percent = Math.round((item.value / (data?.totalChecked || 1)) * 100);
-                  const rawKey = Object.keys(data?.verdictBreakdown || {}).find(
-                    k => k.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) === item.name
-                  ) || 'unverified';
-                  
-                  return (
-                    <div key={i} className="flex items-center justify-between border-b pb-3 last:border-0 last:pb-0">
-                      <div className="flex items-center gap-3">
-                        <VerdictBadge verdict={rawKey} />
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <div className="w-32 h-2 bg-muted rounded-full overflow-hidden">
-                          <div 
-                            className="h-full rounded-full" 
-                            style={{ width: `${percent}%`, backgroundColor: item.color }}
+              <div className="space-y-3">
+                {chartData
+                  .sort((a, b) => (b.value as number) - (a.value as number))
+                  .map((item, i) => {
+                    const pct = Math.round(((item.value as number) / total) * 100);
+                    return (
+                      <div key={i} className="group">
+                        <div className="flex items-center justify-between mb-1.5">
+                          <VerdictBadge verdict={item.rawKey} size="sm" />
+                          <div className="flex items-center gap-3">
+                            <span className="text-sm font-black tabular-nums">{item.value as number}</span>
+                            <span className="text-xs text-muted-foreground font-mono w-8 text-right">{pct}%</span>
+                          </div>
+                        </div>
+                        <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                          <div
+                            className="h-full rounded-full transition-all duration-700"
+                            style={{ width: `${pct}%`, backgroundColor: item.color }}
                           />
                         </div>
-                        <div className="w-12 text-right">
-                          <span className="font-bold">{item.value}</span>
-                          <span className="text-xs text-muted-foreground ml-1">({percent}%)</span>
-                        </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
               </div>
             )}
           </CardContent>
