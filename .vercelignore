@@ -1,0 +1,17 @@
+.git
+.github
+.vscode
+.local
+.agents
+.claude
+*.log
+.env
+.env.local
+.env.*.local
+.vercel
+artifacts/mockup-sandbox
+scripts
+.replit
+.replitignore
+artifacts/api-server/dist
+artifacts/fact-checker/node_modules
