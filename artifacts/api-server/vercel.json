@@ -1,7 +1,7 @@
 {
   "version": 2,
   "buildCommand": "cd ../.. && pnpm install && cd artifacts/api-server && pnpm run build",
-  "installCommand": "pnpm install --frozen-lockfile",
+  "installCommand": "cd ../.. && pnpm install",
   "framework": null,
   "rewrites": [
     {
