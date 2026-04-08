@@ -66,71 +66,71 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
-/* PROFESSIONAL NAVY BLUE THEME */
+/* PROFESSIONAL PURPLE/VIOLET GRADIENT THEME - Modern News Platform */
 :root {
-  --button-outline: rgba(0,0,0, .12);
-  --badge-outline: rgba(0,0,0, .06);
+  --button-outline: rgba(124, 58, 237, .15);
+  --badge-outline: rgba(124, 58, 237, .08);
   --opaque-button-border-intensity: -10;
-  --elevate-1: rgba(0,0,0, .04);
-  --elevate-2: rgba(0,0,0, .09);
+  --elevate-1: rgba(124, 58, 237, .05);
+  --elevate-2: rgba(124, 58, 237, .10);
 
-  /* Clean off-white background like quality newspaper */
-  --background: 210 20% 98%;
-  --foreground: 220 40% 8%;
-  --border: 214 20% 86%;
-  --input: 214 20% 88%;
-  --ring: 214 85% 42%;
+  /* Rich purple-tinted background */
+  --background: 270 35% 96%;
+  --foreground: 270 60% 10%;
+  --border: 270 30% 82%;
+  --input: 270 30% 88%;
+  --ring: 270 70% 60%;
 
   --card: 0 0% 100%;
-  --card-foreground: 220 40% 8%;
-  --card-border: 214 18% 90%;
+  --card-foreground: 270 60% 10%;
+  --card-border: 270 25% 85%;
 
-  /* Deep navy sidebar/header */
-  --sidebar: 220 55% 12%;
-  --sidebar-foreground: 210 30% 95%;
-  --sidebar-border: 220 45% 18%;
-  --sidebar-primary: 210 100% 62%;
-  --sidebar-primary-foreground: 220 55% 8%;
-  --sidebar-accent: 220 45% 18%;
-  --sidebar-accent-foreground: 210 30% 95%;
-  --sidebar-ring: 210 100% 62%;
+  /* Deep violet sidebar/header */
+  --sidebar: 270 70% 18%;
+  --sidebar-foreground: 270 25% 96%;
+  --sidebar-border: 270 60% 28%;
+  --sidebar-primary: 280 75% 65%;
+  --sidebar-primary-foreground: 270 70% 8%;
+  --sidebar-accent: 270 55% 28%;
+  --sidebar-accent-foreground: 270 25% 96%;
+  --sidebar-ring: 280 75% 65%;
 
   --popover: 0 0% 100%;
-  --popover-foreground: 220 40% 8%;
-  --popover-border: 214 18% 88%;
+  --popover-foreground: 270 60% 10%;
+  --popover-border: 270 25% 85%;
 
-  /* Strong professional blue */
-  --primary: 214 85% 38%;
+  /* Vibrant violet primary */
+  --primary: 270 70% 60%;
   --primary-foreground: 0 0% 100%;
 
-  --secondary: 214 20% 93%;
-  --secondary-foreground: 220 40% 15%;
+  --secondary: 270 35% 90%;
+  --secondary-foreground: 270 60% 18%;
 
-  --muted: 210 18% 94%;
-  --muted-foreground: 220 15% 45%;
+  --muted: 270 25% 92%;
+  --muted-foreground: 270 25% 42%;
 
-  --accent: 214 70% 93%;
-  --accent-foreground: 214 85% 28%;
+  --accent: 280 65% 88%;
+  --accent-foreground: 280 85% 30%;
 
   --destructive: 0 82% 52%;
   --destructive-foreground: 0 0% 100%;
 
   --chart-1: 142 71% 42%;
-  --chart-2: 45 93% 50%;
-  --chart-3: 22 90% 52%;
+  --chart-2: 280 75% 65%;
+  --chart-3: 270 70% 60%;
   --chart-4: 0 84% 55%;
-  --chart-5: 214 15% 60%;
+  --chart-5: 270 45% 60%;
 
   --app-font-sans: 'Inter', system-ui, sans-serif;
   --app-font-serif: 'Georgia', 'Times New Roman', serif;
   --app-font-mono: 'Menlo', 'Monaco', monospace;
-  --radius: 0.375rem;
-  --shadow-2xs: 0 1px 2px 0 rgba(0,0,0,0.05);
-  --shadow-xs: 0 1px 3px 0 rgba(0,0,0,0.08);
-  --shadow-sm: 0 1px 3px 0 rgba(0,0,0,0.10), 0 1px 2px -1px rgba(0,0,0,0.06);
-  --shadow: 0 2px 6px -1px rgba(0,0,0,0.10), 0 1px 4px -2px rgba(0,0,0,0.06);
-  --shadow-md: 0 4px 8px -2px rgba(0,0,0,0.10), 0 2px 4px -2px rgba(0,0,0,0.06);
-  --shadow-lg: 0 8px 16px -4px rgba(0,0,0,0.10), 0 4px 8px -4px rgba(0,0,0,0.06);
+  --radius: 0.5rem;
+  --shadow-2xs: 0 1px 2px 0 rgba(124, 58, 237, 0.08);
+  --shadow-xs: 0 1px 3px 0 rgba(124, 58, 237, 0.12);
+  --shadow-sm: 0 1px 3px 0 rgba(124, 58, 237, 0.15), 0 1px 2px -1px rgba(124, 58, 237, 0.10);
+  --shadow: 0 2px 6px -1px rgba(124, 58, 237, 0.15), 0 1px 4px -2px rgba(124, 58, 237, 0.10);
+  --shadow-md: 0 4px 8px -2px rgba(124, 58, 237, 0.15), 0 2px 4px -2px rgba(124, 58, 237, 0.10);
+  --shadow-lg: 0 8px 16px -4px rgba(124, 58, 237, 0.15), 0 4px 8px -4px rgba(124, 58, 237, 0.10);
   --tracking-normal: -0.01em;
   --spacing: 0.25rem;
 
@@ -155,6 +155,17 @@
 
   h1, h2, h3 {
     letter-spacing: -0.025em;
+    font-weight: 800;
+  }
+
+  /* Newspaper-style drop caps for large text */
+  .drop-cap::first-letter {
+    font-size: 3.5em;
+    line-height: 0.8;
+    float: left;
+    margin: 0.1em 0.1em 0 0;
+    font-weight: 900;
+    color: hsl(var(--primary));
   }
 }
 
@@ -165,29 +176,47 @@
 .verdict-partially  { color: hsl(40 90% 38%); }
 .verdict-unverified { color: hsl(220 12% 48%); }
 
-/* Navbar accent line */
+/* Navbar accent line - Violet gradient */
 .nav-accent-line {
-  background: linear-gradient(90deg, hsl(214 85% 38%) 0%, hsl(210 100% 55%) 100%);
+  background: linear-gradient(90deg, hsl(270 70% 60%) 0%, hsl(280 75% 65%) 100%);
 }
 
-/* Hero gradient */
+/* Hero gradient - Deep violet to lighter violet */
 .hero-gradient {
-  background: linear-gradient(160deg, hsl(220 55% 12%) 0%, hsl(214 75% 22%) 50%, hsl(214 85% 30%) 100%);
+  background: linear-gradient(160deg, hsl(270 70% 18%) 0%, hsl(270 65% 30%) 50%, hsl(275 70% 45%) 100%);
 }
 
-/* Card hover */
+/* Card hover - Violet accent */
 .card-hover {
   transition: box-shadow 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
 }
 .card-hover:hover {
-  box-shadow: var(--shadow-md);
-  border-color: hsl(214 85% 70%);
-  transform: translateY(-1px);
+  box-shadow: var(--shadow-lg);
+  border-color: hsl(270 70% 60%);
+  transform: translateY(-2px);
 }
 
-/* Ticker strip */
+/* Ticker strip - Vibrant violet */
 .ticker-bg {
-  background: hsl(214 85% 38%);
+  background: linear-gradient(90deg, hsl(270 70% 60%) 0%, hsl(280 75% 65%) 100%);
+}
+
+/* Network pattern background - Rich violet gradient */
+.network-bg {
+  background: linear-gradient(135deg, hsl(270 70% 22%) 0%, hsl(270 65% 35%) 50%, hsl(275 70% 30%) 100%);
+  position: relative;
+}
+
+.network-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(circle at 20% 30%, hsla(280, 75%, 65%, 0.15) 0%, transparent 50%),
+    radial-gradient(circle at 80% 70%, hsla(270, 80%, 70%, 0.15) 0%, transparent 50%),
+    radial-gradient(circle at 40% 80%, hsla(275, 70%, 60%, 0.12) 0%, transparent 50%);
+  opacity: 0.6;
+  pointer-events: none;
 }
 
 @layer utilities {

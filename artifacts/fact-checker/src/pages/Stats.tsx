@@ -45,8 +45,8 @@ function StatCard({
               <p className="text-xs text-muted-foreground">{sub}</p>
             )}
           </div>
-          <div className={`p-2.5 rounded-lg shrink-0 ml-4 ${accent ? "bg-red-50" : "bg-primary/8 bg-blue-50"}`}>
-            <Icon size={20} className={accent ? "text-destructive" : "text-primary"} strokeWidth={2} />
+          <div className={`p-2.5 rounded-xl shrink-0 ml-4 shadow-sm ${accent ? "bg-red-50" : "bg-gradient-to-br from-violet-50 to-purple-50"}`}>
+            <Icon size={20} className={accent ? "text-destructive" : "text-violet-600"} strokeWidth={2} />
           </div>
         </div>
       </CardContent>
@@ -59,7 +59,7 @@ export function Stats() {
     query: { queryKey: getGetFactCheckStatsQueryKey() },
   });
 
-  const chartData = data
+  const chartData = data && data.verdictBreakdown
     ? Object.entries(data.verdictBreakdown).map(([key, value]) => ({
         name: key.replace("_", " ").replace(/\b\w/g, (l) => l.toUpperCase()),
         rawKey: key,
@@ -84,7 +84,7 @@ export function Stats() {
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           title="Total Verifications"
-          value={data?.totalChecked.toLocaleString() ?? "—"}
+          value={(data?.totalChecked ?? 0).toLocaleString()}
           icon={FileText}
           loading={isLoading}
         />
@@ -96,7 +96,7 @@ export function Stats() {
         />
         <StatCard
           title="Last 24 Hours"
-          value={data?.recentChecks ?? "—"}
+          value={(data?.recentChecks ?? 0).toString()}
           sub="checks submitted today"
           icon={Activity}
           loading={isLoading}

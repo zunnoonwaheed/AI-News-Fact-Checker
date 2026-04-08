@@ -15,60 +15,75 @@ import { fetchRelatedArticles, analyzeWithClaude } from "../lib/factcheck";
 const router: IRouter = Router();
 
 router.post("/factcheck", async (req, res): Promise<void> => {
-  const parsed = CheckFactBody.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: "Invalid request", message: parsed.error.message });
-    return;
+  try {
+    const parsed = CheckFactBody.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: "Invalid request", message: parsed.error.message });
+      return;
+    }
+
+    const { query } = parsed.data;
+    req.log.info({ queryLength: query.length }, "Starting fact check");
+
+    const [relatedArticles, analysis] = await Promise.all([
+      fetchRelatedArticles(query),
+      analyzeWithClaude(query, []),
+    ]);
+
+    const analysisWithSources = await analyzeWithClaude(query, relatedArticles);
+
+    const topSources = relatedArticles
+      .filter(a => a.credibilityScore > 60)
+      .slice(0, 5);
+
+    const otherArticles = relatedArticles
+      .filter(a => a.credibilityScore <= 60)
+      .slice(0, 5);
+
+    const [saved] = await db
+      .insert(factChecksTable)
+      .values({
+        query,
+        overallVerdict: analysisWithSources.overallVerdict,
+        credibilityScore: analysisWithSources.credibilityScore,
+        summary: analysisWithSources.summary,
+        claims: analysisWithSources.claims,
+        sources: topSources,
+        relatedArticles: otherArticles,
+        analysisDetails: analysisWithSources.analysisDetails,
+      })
+      .returning();
+
+    req.log.info({ id: saved.id, verdict: saved.overallVerdict }, "Fact check complete");
+
+    // Convert string "false" back to boolean false for API response
+    const overallVerdict = saved.overallVerdict === "false" ? false : saved.overallVerdict;
+    const claims = (saved.claims as any[]).map((claim: any) => ({
+      ...claim,
+      verdict: claim.verdict === "false" ? false : claim.verdict,
+    }));
+
+    res.json(
+      CheckFactResponse.parse({
+        id: saved.id,
+        query: saved.query,
+        overallVerdict,
+        credibilityScore: saved.credibilityScore,
+        summary: saved.summary,
+        claims,
+        sources: saved.sources,
+        relatedArticles: saved.relatedArticles,
+        analysisDetails: saved.analysisDetails,
+        checkedAt: saved.checkedAt.toISOString(),
+      })
+    );
+  } catch (error) {
+    req.log.error({ error }, "Fact check failed");
+    res.status(500).json({
+      error: "Fact check failed",
+      message: error instanceof Error ? error.message : "Unknown error occurred"
+    });
   }
-
-  const { query } = parsed.data;
-  req.log.info({ queryLength: query.length }, "Starting fact check");
-
-  const [relatedArticles, analysis] = await Promise.all([
-    fetchRelatedArticles(query),
-    analyzeWithClaude(query, []),
-  ]);
-
-  const analysisWithSources = await analyzeWithClaude(query, relatedArticles);
-
-  const topSources = relatedArticles
-    .filter(a => a.credibilityScore > 60)
-    .slice(0, 5);
-
-  const otherArticles = relatedArticles
-    .filter(a => a.credibilityScore <= 60)
-    .slice(0, 5);
-
-  const [saved] = await db
-    .insert(factChecksTable)
-    .values({
-      query,
-      overallVerdict: analysisWithSources.overallVerdict,
-      credibilityScore: analysisWithSources.credibilityScore,
-      summary: analysisWithSources.summary,
-      claims: analysisWithSources.claims,
-      sources: topSources,
-      relatedArticles: otherArticles,
-      analysisDetails: analysisWithSources.analysisDetails,
-    })
-    .returning();
-
-  req.log.info({ id: saved.id, verdict: saved.overallVerdict }, "Fact check complete");
-
-  res.json(
-    CheckFactResponse.parse({
-      id: saved.id,
-      query: saved.query,
-      overallVerdict: saved.overallVerdict,
-      credibilityScore: saved.credibilityScore,
-      summary: saved.summary,
-      claims: saved.claims,
-      sources: saved.sources,
-      relatedArticles: saved.relatedArticles,
-      analysisDetails: saved.analysisDetails,
-      checkedAt: saved.checkedAt.toISOString(),
-    })
-  );
 });
 
 router.get("/factcheck/stats", async (req, res): Promise<void> => {
@@ -132,18 +147,27 @@ router.get("/factcheck/history", async (req, res): Promise<void> => {
 
   const items = await query;
 
-  const mapped = items.map(item => ({
-    id: item.id,
-    query: item.query,
-    overallVerdict: item.overallVerdict,
-    credibilityScore: item.credibilityScore,
-    summary: item.summary,
-    claims: item.claims as unknown[],
-    sources: item.sources as unknown[],
-    relatedArticles: item.relatedArticles as unknown[],
-    analysisDetails: item.analysisDetails ?? undefined,
-    checkedAt: item.checkedAt.toISOString(),
-  }));
+  const mapped = items.map(item => {
+    // Convert string "false" back to boolean false for API response
+    const overallVerdict = item.overallVerdict === "false" ? false : item.overallVerdict;
+    const claims = (item.claims as any[]).map((claim: any) => ({
+      ...claim,
+      verdict: claim.verdict === "false" ? false : claim.verdict,
+    }));
+
+    return {
+      id: item.id,
+      query: item.query,
+      overallVerdict,
+      credibilityScore: item.credibilityScore,
+      summary: item.summary,
+      claims,
+      sources: item.sources as unknown[],
+      relatedArticles: item.relatedArticles as unknown[],
+      analysisDetails: item.analysisDetails ?? undefined,
+      checkedAt: item.checkedAt.toISOString(),
+    };
+  });
 
   res.json(GetCheckHistoryResponse.parse({ items: mapped, total: mapped.length }));
 });
@@ -166,14 +190,21 @@ router.get("/factcheck/:id", async (req, res): Promise<void> => {
     return;
   }
 
+  // Convert string "false" back to boolean false for API response
+  const overallVerdict = item.overallVerdict === "false" ? false : item.overallVerdict;
+  const claims = (item.claims as any[]).map((claim: any) => ({
+    ...claim,
+    verdict: claim.verdict === "false" ? false : claim.verdict,
+  }));
+
   res.json(
     GetFactCheckByIdResponse.parse({
       id: item.id,
       query: item.query,
-      overallVerdict: item.overallVerdict,
+      overallVerdict,
       credibilityScore: item.credibilityScore,
       summary: item.summary,
-      claims: item.claims as unknown[],
+      claims,
       sources: item.sources as unknown[],
       relatedArticles: item.relatedArticles as unknown[],
       analysisDetails: item.analysisDetails ?? undefined,
