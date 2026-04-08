@@ -1,12 +1,15 @@
 {
   "version": 2,
-  "buildCommand": "cd ../.. && pnpm install && cd artifacts/api-server && pnpm run build",
-  "installCommand": "cd ../.. && pnpm install",
-  "framework": null,
-  "rewrites": [
+  "builds": [
     {
-      "source": "/(.*)",
-      "destination": "/api/index.ts"
+      "src": "api/index.ts",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/api/index.ts"
     }
   ],
   "env": {

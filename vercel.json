@@ -1,7 +1,6 @@
 {
-  "buildCommand": "PORT=5173 BASE_PATH=/ pnpm run build",
+  "buildCommand": "cd artifacts/api-server && pnpm run build && cd ../fact-checker && PORT=5173 BASE_PATH=/ pnpm run build",
   "outputDirectory": "artifacts/fact-checker/dist/public",
-  "devCommand": "cd artifacts/fact-checker && PORT=5173 BASE_PATH=/ pnpm run dev",
   "installCommand": "pnpm install",
   "framework": null,
   "env": {
